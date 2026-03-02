@@ -1,0 +1,1725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Class Schedule System</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #667eea;
+            --primary-dark: #5568d3;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --bg: #f5f7fa;
+            --card: #ffffff;
+            --text: #1f2937;
+            --text-light: #6b7280;
+            --border: #e5e7eb;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            transition: opacity 0.2s ease;
+        }
+
+        body.loading {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        body.loaded {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* AUTH PAGES */
+        .auth-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .auth-card {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 420px;
+        }
+
+        .auth-card h2 {
+            color: var(--primary);
+            font-size: 28px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .auth-card p {
+            text-align: center;
+            color: var(--text-light);
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--text);
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .link-text {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 14px;
+            color: var(--text-light);
+        }
+
+        .link-text a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .link-text a:hover {
+            text-decoration: underline;
+        }
+
+        .message {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .message.success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #6ee7b7;
+        }
+
+        .message.error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+
+        .message.info {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #93c5fd;
+        }
+
+        /* APP LAYOUT */
+        .app-wrapper {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 260px;
+            background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            transition: transform 0.3s;
+            z-index: 1000;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+
+        .sidebar.closed {
+            transform: translateX(-100%);
+        }
+
+        .sidebar-brand {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 40px;
+            text-align: center;
+            padding-bottom: 20px;
+            border-bottom: 2px solid rgba(255,255,255,0.2);
+        }
+
+        .nav-item {
+            padding: 14px 18px;
+            margin-bottom: 10px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background: rgba(255,255,255,0.25);
+            transform: translateX(8px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .hamburger {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 26px;
+            cursor: pointer;
+            padding: 8px;
+            color: var(--text);
+        }
+
+        .main-content {
+            flex: 1;
+            margin-left: 260px;
+            display: flex;
+            flex-direction: column;
+            transition: margin-left 0.3s;
+        }
+
+        .main-content.full-width {
+            margin-left: 0;
+        }
+
+        .header {
+            background: white;
+            padding: 20px 30px;
+            border-bottom: 2px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .header-left h1 {
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .notification-bell {
+            position: relative;
+            font-size: 26px;
+            cursor: pointer;
+            color: var(--text-light);
+            transition: all 0.3s;
+        }
+
+        .notification-bell:hover {
+            color: var(--primary);
+            transform: scale(1.1);
+        }
+
+        .badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: var(--danger);
+            color: white;
+            border-radius: 50%;
+            width: 22px;
+            height: 22px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 11px;
+            font-weight: 700;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .notification-dropdown {
+            position: absolute;
+            top: 65px;
+            right: 30px;
+            background: white;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            width: 340px;
+            max-height: 450px;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            display: none;
+            z-index: 200;
+        }
+
+        .notification-dropdown.show {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .notification-item {
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+            font-size: 14px;
+            transition: background 0.2s;
+            cursor: pointer;
+        }
+
+        .notification-item:hover {
+            background: var(--bg);
+        }
+
+        .notification-item:last-child {
+            border-bottom: none;
+        }
+
+        .content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .card {
+            background: white;
+            padding: 28px;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            margin-bottom: 24px;
+            border: 1px solid var(--border);
+        }
+
+        .card h3 {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: var(--text);
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+            color: white;
+            transition: transform 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+        }
+
+        .stat-card h4 {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+
+        .stat-value {
+            font-size: 38px;
+            font-weight: 700;
+        }
+
+        .item {
+            background: var(--bg);
+            padding: 18px;
+            border-radius: 10px;
+            border-left: 4px solid var(--primary);
+            margin-bottom: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s;
+        }
+
+        .item:hover {
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+            transform: translateX(8px);
+        }
+
+        .item-content h4 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: var(--text);
+        }
+
+        .item-content p {
+            font-size: 14px;
+            color: var(--text-light);
+            margin: 4px 0;
+        }
+
+        .item-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn-sm {
+            padding: 8px 14px;
+            font-size: 13px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: scale(1.05);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn-warning {
+            background: var(--warning);
+            color: white;
+        }
+
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .status-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-done {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-missing {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 3000;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal.show {
+            display: flex;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 32px;
+            border-radius: 16px;
+            max-width: 540px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .modal-header h3 {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 32px;
+            cursor: pointer;
+            color: var(--text-light);
+            transition: color 0.3s;
+        }
+
+        .close-modal:hover {
+            color: var(--danger);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .flex-between {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .mt-20 {
+            margin-top: 20px;
+        }
+
+        .mb-20 {
+            margin-bottom: 20px;
+        }
+
+        /* Calendar Styles */
+        #calendar {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+        }
+
+        .fc-button {
+            background: var(--primary) !important;
+            border: none !important;
+        }
+
+        .fc-button:hover {
+            background: var(--primary-dark) !important;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                margin-left: 0;
+            }
+
+            .hamburger {
+                display: block;
+            }
+
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+
+            .item-actions {
+                width: 100%;
+            }
+
+            .sidebar {
+                width: 80%;
+                max-width: 320px;
+            }
+        }
+
+        .sidebar-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 900;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease;
+        }
+
+        .sidebar-backdrop.show {
+            opacity: 1;
+            visibility: visible;
+        }
+    </style>
+</head>
+<body class="loading">
+    <!-- SIGNUP PAGE -->
+    <div class="auth-container" id="signupPage">
+        <div class="auth-card">
+            <h2>Create Account</h2>
+            <p>Join Class Schedule System</p>
+            <div id="signupMessage"></div>
+            <form>
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" id="signupName" required placeholder="Enter your full name">
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="signupEmail" required placeholder="Enter your email">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="signupPassword" required placeholder="Create a strong password">
+                </div>
+                <div class="form-group hidden" id="verificationGroup">
+                    <label>Verification Code</label>
+                    <input type="text" id="verificationCode" placeholder="Enter 6-digit code from email">
+                    <small style="color: var(--text-light); display: block; margin-top: 5px;">Check your email inbox for the verification code</small>
+                </div>
+                <button type="button" class="btn" id="signupBtn" onclick="handleSignup()">Send Verification Code</button>
+            </form>
+            <div class="link-text">
+                Already have an account? <a onclick="switchPage('loginPage')">Login</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- LOGIN PAGE -->
+    <div class="auth-container hidden" id="loginPage">
+        <div class="auth-card">
+            <h2>Welcome Back</h2>
+            <p>Login to your account</p>
+            <div id="loginMessage"></div>
+            <form>
+                <div class="form-group">
+                    <label>Name</label>
+                    <input type="text" id="loginName" required placeholder="Enter your name">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="loginPassword" required placeholder="Enter your password">
+                </div>
+                <button type="button" class="btn" onclick="handleLogin()">Login</button>
+            </form>
+            <div class="link-text">
+                <a onclick="switchPage('forgotPage')">Forgot Password?</a><br><br>
+                Don't have an account? <a onclick="switchPage('signupPage')">Sign Up</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- FORGOT PASSWORD PAGE -->
+    <div class="auth-container hidden" id="forgotPage">
+        <div class="auth-card">
+            <h2>Reset Password</h2>
+            <p>Enter your registered email</p>
+            <div id="forgotMessage"></div>
+            <form>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="forgotEmail" required placeholder="Enter your registered email">
+                </div>
+                <div class="form-group hidden" id="resetCodeGroup">
+                    <label>Verification Code</label>
+                    <input type="text" id="resetCode" placeholder="Enter 6-digit code from email">
+                </div>
+                <div class="form-group hidden" id="newPasswordGroup">
+                    <label>New Password</label>
+                    <input type="password" id="newPassword" placeholder="Enter new password">
+                </div>
+                <button type="button" class="btn" id="forgotBtn" onclick="sendResetCode()">Send Reset Code</button>
+            </form>
+            <div class="link-text">
+                <a onclick="switchPage('loginPage')">Back to Login</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN APP -->
+    <div class="app-wrapper hidden" id="appWrapper">
+        <!-- SIDEBAR -->
+        <div class="sidebar closed" id="sidebar">
+            <div class="sidebar-brand">Class Schedule</div>
+            <div class="nav-item active" data-nav="dashboard" onclick="switchNav('dashboard', this)">Dashboard</div>
+            <div class="nav-item" data-nav="todos" onclick="switchNav('todos', this)">My To-Do List</div>
+            <div class="nav-item" data-nav="events" onclick="switchNav('events', this)">My Event List</div>
+            <div class="nav-item" data-nav="calendar" onclick="switchNav('calendar', this)">My Schedule</div>
+            <div class="nav-item" onclick="logout()">Logout</div>
+        </div>
+        <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
+
+        <!-- MAIN CONTENT -->
+        <div class="main-content full-width" id="mainContent">
+            <!-- HEADER -->
+            <div class="header">
+                <div class="header-left">
+                    <button class="hamburger" onclick="toggleSidebar()">☰</button>
+                    <h1 id="pageTitle">Dashboard</h1>
+                </div>
+                <div class="notification-bell" onclick="toggleNotifications()">
+                    🔔
+                    <span class="badge hidden" id="notificationBadge">0</span>
+                    <div class="notification-dropdown" id="notificationDropdown">
+                        <div id="notificationList" style="padding: 16px; text-align: center; color: var(--text-light);">
+                            No notifications
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CONTENT -->
+            <div class="content">
+                <!-- DASHBOARD PAGE -->
+                <div class="page active" id="dashboardPage">
+                    <div class="dashboard-grid">
+                        <div class="stat-card">
+                            <h4>Pending Tasks</h4>
+                            <div class="stat-value" id="pendingCount">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <h4>Completed Tasks</h4>
+                            <div class="stat-value" id="doneCount">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <h4>Missing Tasks</h4>
+                            <div class="stat-value" id="missingCount">0</div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="flex-between mb-20">
+                            <h3>To-Do List</h3>
+                            <button class="btn-sm btn-primary" onclick="switchNav('todos')">View All</button>
+                        </div>
+                        <div id="dashboardTodos">No tasks yet</div>
+                    </div>
+
+                    <div class="card">
+                        <div class="flex-between mb-20">
+                            <h3>Event List</h3>
+                            <button class="btn-sm btn-primary" onclick="switchNav('events')">View All</button>
+                        </div>
+                        <div id="dashboardEvents">No events yet</div>
+                    </div>
+                </div>
+
+                <!-- TO-DO LIST PAGE -->
+                <div class="page" id="todosPage">
+                    <div class="card">
+                        <div class="flex-between mb-20">
+                            <h3>My To-Do List</h3>
+                            <button class="btn-sm btn-primary" onclick="showAddTodoModal()">Add Task</button>
+                        </div>
+                        <div class="flex-between mb-20" style="gap: 10px; flex-wrap: wrap;">
+                            <button class="btn-sm btn-primary" onclick="filterTodos('all')">All</button>
+                            <button class="btn-sm btn-warning" onclick="filterTodos('Pending')">Pending</button>
+                            <button class="btn-sm btn-success" onclick="filterTodos('Done')">Done</button>
+                            <button class="btn-sm btn-danger" onclick="filterTodos('Missing')">Missing</button>
+                        </div>
+                        <div id="todoList"></div>
+                    </div>
+                </div>
+
+                <!-- EVENT LIST PAGE -->
+                <div class="page" id="eventsPage">
+                    <div class="card">
+                        <div class="flex-between mb-20">
+                            <h3>My Event List</h3>
+                            <button class="btn-sm btn-primary" onclick="showAddEventModal()">Add Event</button>
+                        </div>
+                        <div id="eventList"></div>
+                    </div>
+                </div>
+
+                <!-- CALENDAR PAGE -->
+                <div class="page" id="calendarPage">
+                    <div class="card">
+                        <h3>My Schedule (Calendar)</h3>
+                        <div id="calendar"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODALS -->
+    <!-- Todo Modal -->
+    <div class="modal" id="todoModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="todoModalTitle">Add Task</h3>
+                <button class="close-modal" onclick="closeModal('todoModal')">&times;</button>
+            </div>
+            <form>
+                <div class="form-group">
+                    <label>Title / Name</label>
+                    <input type="text" id="todoName" required>
+                </div>
+                <div class="form-group">
+                    <label>Date</label>
+                    <input type="date" id="todoDate">
+                </div>
+                <div class="form-group">
+                    <label>Time</label>
+                    <input type="time" id="todoTime">
+                </div>
+                <div class="form-group">
+                    <label>Notes</label>
+                    <textarea id="todoNotes" rows="3"></textarea>
+                </div>
+                <button type="button" class="btn" onclick="saveTodo()">Save Task</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Event Modal -->
+    <div class="modal" id="eventModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="eventModalTitle">Add Event</h3>
+                <button class="close-modal" onclick="closeModal('eventModal')">&times;</button>
+            </div>
+            <form>
+                <div class="form-group">
+                    <label>Name</label>
+                    <input type="text" id="eventName" required>
+                </div>
+                <div class="form-group">
+                    <label>Location</label>
+                    <input type="text" id="eventLocation">
+                </div>
+                <div class="form-group">
+                    <label>Date</label>
+                    <input type="date" id="eventDate">
+                </div>
+                <div class="form-group">
+                    <label>Time</label>
+                    <input type="time" id="eventTime">
+                </div>
+                <div class="form-group">
+                    <label>Notes</label>
+                    <textarea id="eventNotes" rows="3"></textarea>
+                </div>
+                <button type="button" class="btn" onclick="saveEvent()">Save Event</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Calendar Event Modal -->
+    <div class="modal" id="calendarModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="calendarModalTitle">Add Class</h3>
+                <button class="close-modal" onclick="closeModal('calendarModal')">&times;</button>
+            </div>
+            <form>
+                <div class="form-group">
+                    <label>Subject / Class Name</label>
+                    <input type="text" id="calendarSubject" required>
+                </div>
+                <div class="form-group">
+                    <label>Room</label>
+                    <input type="text" id="calendarRoom">
+                </div>
+                <div class="form-group">
+                    <label>Mode</label>
+                    <select id="calendarMode">
+                        <option value="F2F">Face-to-Face</option>
+                        <option value="Online">Online</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Start Date & Time</label>
+                    <input type="datetime-local" id="calendarStart">
+                </div>
+                <div class="form-group">
+                    <label>End Date & Time</label>
+                    <input type="datetime-local" id="calendarEnd">
+                </div>
+                <div class="form-group">
+                    <label>Notes</label>
+                    <textarea id="calendarNotes" rows="3"></textarea>
+                </div>
+                <button type="button" class="btn" onclick="saveCalendarEvent()">Save to Calendar</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+    <script>
+        // Base URL for API calls.
+        // Leave this as an empty string when files (index.html, auth.php, api.php) are in the same folder on your hosting.
+        // If your PHP files are in a subfolder, set API_URL to that path, e.g. '/class_schedule/'.
+        const API_URL = '';
+        let currentUser = null;
+        let userEmail = '';
+        let editingTodoId = null;
+        let editingEventId = null;
+        let editingCalendarEventId = null;
+        let allTodos = [];
+        let currentFilter = 'all';
+        let calendar = null;
+
+        // PAGE SWITCHING
+        function switchPage(pageName) {
+            document.querySelectorAll('.auth-container, .app-wrapper').forEach(p => p.classList.add('hidden'));
+            document.getElementById(pageName).classList.remove('hidden');
+        }
+
+        function switchNav(navName, clickedNav = null) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(navName + 'Page').classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+
+            if (clickedNav) {
+                clickedNav.classList.add('active');
+            } else {
+                const matchingNav = document.querySelector(`.nav-item[data-nav="${navName}"]`);
+                if (matchingNav) matchingNav.classList.add('active');
+            }
+            
+            const titles = {
+                dashboard: 'Dashboard',
+                todos: 'My To-Do List',
+                events: 'My Event List',
+                calendar: 'My Schedule (Calendar)'
+            };
+            document.getElementById('pageTitle').textContent = titles[navName] || 'Dashboard';
+            
+            if (navName === 'todos') loadTodos();
+            if (navName === 'events') loadEvents();
+            if (navName === 'calendar' && !calendar) initCalendar();
+
+            if (window.innerWidth <= 768) {
+                document.getElementById('sidebar').classList.add('closed');
+                document.getElementById('mainContent').classList.add('full-width');
+                updateSidebarBackdrop();
+            }
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('mainContent');
+            sidebar.classList.toggle('closed');
+            if (sidebar.classList.contains('closed')) {
+                mainContent.classList.add('full-width');
+            } else {
+                mainContent.classList.remove('full-width');
+            }
+            updateSidebarBackdrop();
+        }
+
+        function toggleNotifications() {
+            document.getElementById('notificationDropdown').classList.toggle('show');
+        }
+
+        function showMessage(elementId, text, type) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="message ${type}">${text}</div>`;
+        }
+
+        // AUTHENTICATION
+        async function handleSignup() {
+            const name = document.getElementById('signupName').value;
+            const email = document.getElementById('signupEmail').value;
+            const password = document.getElementById('signupPassword').value;
+
+            if (!name || !email || !password) {
+                showMessage('signupMessage', 'All fields are required', 'error');
+                return;
+            }
+
+            userEmail = email;
+            const formData = new FormData();
+            formData.append('action', 'signup');
+            formData.append('full_name', name);
+            formData.append('email', email);
+            formData.append('password', password);
+
+            try {
+                const response = await fetch(API_URL + 'auth.php', { method: 'POST', body: formData });
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    showMessage('signupMessage', result.message + (result.code ? ` Code: ${result.code}` : ''), 'success');
+                    document.getElementById('verificationGroup').classList.remove('hidden');
+                    document.getElementById('signupBtn').textContent = 'Verify & Complete Signup';
+                    document.getElementById('signupBtn').onclick = verifySignup;
+                } else {
+                    showMessage('signupMessage', result.message, 'error');
+                }
+            } catch (error) {
+                showMessage('signupMessage', 'Connection error. Please check if XAMPP is running.', 'error');
+            }
+        }
+
+        async function verifySignup() {
+            const code = document.getElementById('verificationCode').value;
+            if (!code) {
+                showMessage('signupMessage', 'Please enter verification code', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('action', 'verify_signup');
+            formData.append('email', userEmail);
+            formData.append('code', code);
+
+            try {
+                const response = await fetch(API_URL + 'auth.php', { method: 'POST', body: formData });
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    showMessage('signupMessage', 'Account created! Redirecting to login...', 'success');
+                    setTimeout(() => switchPage('loginPage'), 1500);
+                } else {
+                    showMessage('signupMessage', result.message, 'error');
+                }
+            } catch (error) {
+                showMessage('signupMessage', 'Connection error', 'error');
+            }
+        }
+
+        async function handleLogin() {
+            const name = document.getElementById('loginName').value;
+            const password = document.getElementById('loginPassword').value;
+
+            if (!name || !password) {
+                showMessage('loginMessage', 'All fields are required', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('action', 'login');
+            formData.append('email', name);
+            formData.append('password', password);
+
+            try {
+                const response = await fetch(API_URL + 'auth.php', { method: 'POST', body: formData });
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    currentUser = { id: result.user_id, name: result.name };
+                    loadApp();
+                } else {
+                    showMessage('loginMessage', result.message, 'error');
+                }
+            } catch (error) {
+                showMessage('loginMessage', 'Connection error. Please check if XAMPP is running.', 'error');
+            }
+        }
+
+        async function sendResetCode() {
+            const email = document.getElementById('forgotEmail').value;
+            if (!email) {
+                showMessage('forgotMessage', 'Please enter your email', 'error');
+                return;
+            }
+
+            userEmail = email;
+            const formData = new FormData();
+            formData.append('action', 'forgot_password');
+            formData.append('email', email);
+
+            try {
+                const response = await fetch(API_URL + 'auth.php', { method: 'POST', body: formData });
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    showMessage('forgotMessage', result.message + (result.code ? ` Code: ${result.code}` : ''), 'success');
+                    document.getElementById('resetCodeGroup').classList.remove('hidden');
+                    document.getElementById('newPasswordGroup').classList.remove('hidden');
+                    document.getElementById('forgotBtn').textContent = 'Reset Password';
+                    document.getElementById('forgotBtn').onclick = resetPassword;
+                } else {
+                    showMessage('forgotMessage', result.message, 'error');
+                }
+            } catch (error) {
+                showMessage('forgotMessage', 'Connection error', 'error');
+            }
+        }
+
+        async function resetPassword() {
+            const code = document.getElementById('resetCode').value;
+            const password = document.getElementById('newPassword').value;
+
+            if (!code || !password) {
+                showMessage('forgotMessage', 'All fields are required', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('action', 'reset_password');
+            formData.append('email', userEmail);
+            formData.append('code', code);
+            formData.append('password', password);
+
+            try {
+                const response = await fetch(API_URL + 'auth.php', { method: 'POST', body: formData });
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    showMessage('forgotMessage', 'Password reset! Redirecting to login...', 'success');
+                    setTimeout(() => {
+                        document.getElementById('loginName').value = '';
+                        document.getElementById('loginPassword').value = '';
+                        switchPage('loginPage');
+                    }, 1500);
+                } else {
+                    showMessage('forgotMessage', result.message, 'error');
+                }
+            } catch (error) {
+                showMessage('forgotMessage', 'Connection error', 'error');
+            }
+        }
+
+        async function logout() {
+            const userName = currentUser ? currentUser.name : 'User';
+            const formData = new FormData();
+            formData.append('action', 'logout');
+            await fetch(API_URL + 'auth.php', { method: 'POST', body: formData });
+            
+            alert(`Thank you, ${userName}!`);
+            currentUser = null;
+            document.getElementById('loginName').value = '';
+            document.getElementById('loginPassword').value = '';
+            switchPage('loginPage');
+        }
+
+        // APP FUNCTIONS
+        function loadApp() {
+            switchPage('appWrapper');
+            document.getElementById('pageTitle').textContent = `Welcome, ${currentUser.name}!`;
+            adjustLayoutForViewport();
+            loadDashboard();
+            loadNotifications();
+            setAppReady();
+        }
+
+        async function loadDashboard() {
+            try {
+                const response = await fetch(API_URL + 'api.php?action=get_dashboard_summary');
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    document.getElementById('pendingCount').textContent = result.todoCounts.pending;
+                    document.getElementById('doneCount').textContent = result.todoCounts.done;
+                    document.getElementById('missingCount').textContent = result.todoCounts.missing;
+
+                    // Display To-Dos
+                    const todoResponse = await fetch(API_URL + 'api.php?action=get_todos');
+                    const todoResult = await todoResponse.json();
+                    if (todoResult.todos && todoResult.todos.length > 0) {
+                        const upcomingTodos = todoResult.todos.filter(t => t.status !== 'Done').slice(0, 3);
+                        document.getElementById('dashboardTodos').innerHTML = upcomingTodos.map(t => `
+                            <div class="item">
+                                <div class="item-content">
+                                    <h4>${t.name} <span class="status-badge status-${t.status.toLowerCase()}">${t.status}</span></h4>
+                                    <p>${t.todo_date && t.todo_time ? ` ${t.todo_date} at ${t.todo_time}` : 'No deadline'}</p>
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+
+                    // Display Events
+                    if (result.upcomingEvents && result.upcomingEvents.length > 0) {
+                        document.getElementById('dashboardEvents').innerHTML = result.upcomingEvents.slice(0, 3).map(e => `
+                            <div class="item">
+                                <div class="item-content">
+                                    <h4>${e.event_name}</h4>
+                                    <p> ${e.event_date} at ${e.event_time}</p>
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+            }
+        }
+
+        async function loadNotifications() {
+            try {
+                const response = await fetch(API_URL + 'api.php?action=get_notifications');
+                const result = await response.json();
+
+                if (result.status === 'success' && result.notifications) {
+                    const unreadCount = result.notifications.filter(n => n.status === 'unread').length;
+                    const badge = document.getElementById('notificationBadge');
+                    
+                    if (unreadCount > 0) {
+                        badge.textContent = unreadCount;
+                        badge.classList.remove('hidden');
+                    } else {
+                        badge.classList.add('hidden');
+                        badge.textContent = '0';
+                    }
+
+                    if (result.notifications.length > 0) {
+                        document.getElementById('notificationList').innerHTML = result.notifications.map(n => `
+                            <div class="notification-item ${n.status === 'unread' ? 'unread' : ''}" data-id="${n.id}" data-message="${n.message.replace(/"/g, '&quot;')}" data-status="${n.status}">
+                                <span>${n.status === 'unread' ? '🔔' : '📢'}</span> ${n.message}
+                                <br><small style="color: var(--text-light);">${new Date(n.created_at).toLocaleString()}</small>
+                            </div>
+                        `).join('');
+                    } else {
+                        document.getElementById('notificationList').innerHTML = '<div style="padding: 16px; color: var(--text-light);">No notifications</div>';
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading notifications:', error);
+            }
+        }
+
+        // Handle clicking on a notification: open the related section (todos or events)
+        function handleNotificationClick(message) {
+            if (!message) return;
+
+            const lowerMsg = message.toLowerCase();
+            if (lowerMsg.includes('task')) {
+                switchNav('todos');
+            } else if (lowerMsg.includes('event')) {
+                switchNav('events');
+            }
+        }
+
+        async function addNotification(message) {
+            const formData = new FormData();
+            formData.append('action', 'add_notification');
+            formData.append('message', message);
+            await fetch(API_URL + 'api.php', { method: 'POST', body: formData });
+            loadNotifications();
+        }
+
+        // TODOS
+        async function loadTodos() {
+            try {
+                const response = await fetch(API_URL + 'api.php?action=get_todos');
+                const result = await response.json();
+
+                if (result.status === 'success' && result.todos) {
+                    allTodos = result.todos;
+                    displayTodos();
+                }
+            } catch (error) {
+                console.error('Error loading todos:', error);
+            }
+        }
+
+        function displayTodos() {
+            let todos = currentFilter === 'all' ? allTodos : allTodos.filter(t => t.status === currentFilter);
+
+            if (todos.length === 0) {
+                document.getElementById('todoList').innerHTML = '<p style="color: var(--text-light);">No tasks found</p>';
+                return;
+            }
+
+            document.getElementById('todoList').innerHTML = todos.map(t => `
+                <div class="item">
+                    <div class="item-content">
+                        <h4>${t.name} <span class="status-badge status-${t.status.toLowerCase()}">${t.status}</span></h4>
+                        <p>${t.todo_date && t.todo_time ? ` ${t.todo_date} at ${t.todo_time}` : 'No deadline'}</p>
+                        ${t.notes ? `<p style="font-size: 13px; color: var(--text-light);">${t.notes}</p>` : ''}
+                    </div>
+                    <div class="item-actions">
+                        <button class="btn-sm btn-success" onclick="updateTodoStatus(${t.id}, 'Done')">✓ Done</button>
+                        <button class="btn-sm btn-danger" onclick="updateTodoStatus(${t.id}, 'Missing')">✗ Missing</button>
+                        <button class="btn-sm btn-primary" onclick="editTodo(${t.id}, '${t.name.replace(/'/g, "\\'")}', '${t.todo_date || ''}', '${t.todo_time || ''}', '${(t.notes || '').replace(/'/g, "\\'")}')">✏️ Edit</button>
+                        <button class="btn-sm btn-danger" onclick="deleteTodo(${t.id})"> Delete</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function filterTodos(filter) {
+            currentFilter = filter;
+            displayTodos();
+        }
+
+        function showAddTodoModal() {
+            editingTodoId = null;
+            document.getElementById('todoModalTitle').textContent = 'Add Task';
+            document.getElementById('todoName').value = '';
+            document.getElementById('todoDate').value = '';
+            document.getElementById('todoTime').value = '';
+            document.getElementById('todoNotes').value = '';
+            document.getElementById('todoModal').classList.add('show');
+        }
+
+        function editTodo(id, name, date, time, notes) {
+            editingTodoId = id;
+            document.getElementById('todoModalTitle').textContent = 'Edit Task';
+            document.getElementById('todoName').value = name;
+            document.getElementById('todoDate').value = date;
+            document.getElementById('todoTime').value = time;
+            document.getElementById('todoNotes').value = notes;
+            document.getElementById('todoModal').classList.add('show');
+        }
+
+        async function saveTodo() {
+            const formData = new FormData();
+            formData.append('action', editingTodoId ? 'update_todo' : 'add_todo');
+            if (editingTodoId) {
+                formData.append('todo_id', editingTodoId);
+                formData.append('status', 'Pending');
+            }
+            formData.append('name', document.getElementById('todoName').value);
+            formData.append('todo_date', document.getElementById('todoDate').value);
+            formData.append('todo_time', document.getElementById('todoTime').value);
+            formData.append('notes', document.getElementById('todoNotes').value);
+
+            try {
+                await fetch(API_URL + 'api.php', { method: 'POST', body: formData });
+                closeModal('todoModal');
+                loadTodos();
+                loadDashboard();
+                addNotification(`Task ${editingTodoId ? 'updated' : 'added'}: ${document.getElementById('todoName').value}`);
+            } catch (error) {
+                alert('Error saving task');
+            }
+        }
+
+        async function updateTodoStatus(id, status) {
+            // Ensure we correctly find the todo even if types differ (string vs number)
+            const todo = allTodos.find(t => String(t.id) === String(id));
+            const formData = new FormData();
+            formData.append('action', 'update_todo');
+            formData.append('todo_id', id);
+            formData.append('status', status);
+            formData.append('name', todo.name);
+            formData.append('todo_date', todo.todo_date || '');
+            formData.append('todo_time', todo.todo_time || '');
+            formData.append('notes', todo.notes || '');
+
+            await fetch(API_URL + 'api.php', { method: 'POST', body: formData });
+            loadTodos();
+            loadDashboard();
+            addNotification(`Task "${todo.name}" marked as ${status}`);
+        }
+
+        async function deleteTodo(id) {
+            if (!confirm('Delete this task?')) return;
+            const formData = new FormData();
+            formData.append('action', 'delete_todo');
+            formData.append('todo_id', id);
+            await fetch(API_URL + 'api.php', { method: 'POST', body: formData });
+            loadTodos();
+            loadDashboard();
+        }
+
+        // EVENTS
+        async function loadEvents() {
+            try {
+                const response = await fetch(API_URL + 'api.php?action=get_events');
+                const result = await response.json();
+
+                if (result.status === 'success' && result.events) {
+                    if (result.events.length === 0) {
+                        document.getElementById('eventList').innerHTML = '<p style="color: var(--text-light);">No events yet</p>';
+                        return;
+                    }
+
+                    document.getElementById('eventList').innerHTML = result.events.map(e => `
+                        <div class="item">
+                            <div class="item-content">
+                                <h4>${e.event_name}</h4>
+                                <p>📍 ${e.location || 'No location'}</p>
+                                <p>📅 ${e.event_date} at ${e.event_time}</p>
+                                ${e.notes ? `<p style="font-size: 13px; color: var(--text-light);">${e.notes}</p>` : ''}
+                            </div>
+                            <div class="item-actions">
+                                <button class="btn-sm btn-success" onclick="markEventDone(${e.id})">✓ Done</button>
+                                <button class="btn-sm btn-primary" onclick="editEvent(${e.id}, '${e.event_name.replace(/'/g, "\\'")}', '${e.location || ''}', '${e.event_date}', '${e.event_time}', '${(e.notes || '').replace(/'/g, "\\'")}')">✏️ Edit</button>
+                                <button class="btn-sm btn-danger" onclick="deleteEvent(${e.id})">🗑️ Delete</button>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Error loading events:', error);
+            }
+        }
+
+        function showAddEventModal() {
+            editingEventId = null;
+            document.getElementById('eventModalTitle').textContent = 'Add Event';
+            document.getElementById('eventName').value = '';
+            document.getElementById('eventLocation').value = '';
+            document.getElementById('eventDate').value = '';
+            document.getElementById('eventTime').value = '';
+            document.getElementById('eventNotes').value = '';
+            document.getElementById('eventModal').classList.add('show');
+        }
+
+        function editEvent(id, name, location, date, time, notes) {
+            editingEventId = id;
+            document.getElementById('eventModalTitle').textContent = 'Edit Event';
+            document.getElementById('eventName').value = name;
+            document.getElementById('eventLocation').value = location;
+            document.getElementById('eventDate').value = date;
+            document.getElementById('eventTime').value = time;
+            document.getElementById('eventNotes').value = notes;
+            document.getElementById('eventModal').classList.add('show');
+        }
+
+        async function saveEvent() {
+            const formData = new FormData();
+            formData.append('action', editingEventId ? 'update_event' : 'add_event');
+            if (editingEventId) formData.append('event_id', editingEventId);
+            formData.append('event_name', document.getElementById('eventName').value);
+            formData.append('location', document.getElementById('eventLocation').value);
+            formData.append('event_date', document.getElementById('eventDate').value);
+            formData.append('event_time', document.getElementById('eventTime').value);
+            formData.append('notes', document.getElementById('eventNotes').value);
+
+            try {
+                await fetch(API_URL + 'api.php', { method: 'POST', body: formData });
+                closeModal('eventModal');
+                loadEvents();
+                loadDashboard();
+                addNotification(`Event ${editingEventId ? 'updated' : 'added'}: ${document.getElementById('eventName').value}`);
+            } catch (error) {
+                alert('Error saving event');
+            }
+        }
+
+        async function markEventDone(id) {
+            addNotification('Event marked as done');
+        }
+
+        async function deleteEvent(id) {
+            if (!confirm('Delete this event?')) return;
+            const formData = new FormData();
+            formData.append('action', 'delete_event');
+            formData.append('event_id', id);
+            await fetch(API_URL + 'api.php', { method: 'POST', body: formData });
+            loadEvents();
+            loadDashboard();
+        }
+
+        // CALENDAR
+        function initCalendar() {
+            const calendarEl = document.getElementById('calendar');
+            calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'timeGridWeek',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                },
+                editable: true,
+                selectable: true,
+                select: function(info) {
+                    document.getElementById('calendarStart').value = info.startStr.slice(0, 16);
+                    document.getElementById('calendarEnd').value = info.endStr.slice(0, 16);
+                    editingCalendarEventId = null;
+                    document.getElementById('calendarModalTitle').textContent = 'Add Class';
+                    document.getElementById('calendarSubject').value = '';
+                    document.getElementById('calendarRoom').value = '';
+                    document.getElementById('calendarMode').value = 'F2F';
+                    document.getElementById('calendarNotes').value = '';
+                    document.getElementById('calendarModal').classList.add('show');
+                },
+                eventClick: function(info) {
+                    if (confirm('Delete this class?')) {
+                        info.event.remove();
+                        deleteCalendarEvent(info.event.id);
+                    }
+                },
+                eventDrop: function(info) {
+                    updateCalendarEvent(info.event);
+                },
+                eventResize: function(info) {
+                    updateCalendarEvent(info.event);
+                }
+            });
+            calendar.render();
+            loadCalendarEvents();
+        }
+
+        async function loadCalendarEvents() {
+            try {
+                const response = await fetch(API_URL + 'api.php?action=get_schedules');
+                const result = await response.json();
+
+                if (result.status === 'success' && result.schedules && calendar) {
+                    result.schedules.forEach(s => {
+                        const startDateTime = s.schedule_date ? `${s.schedule_date}T${s.schedule_time}` : `${new Date().toISOString().split('T')[0]}T${s.schedule_time}`;
+                        calendar.addEvent({
+                            id: s.id,
+                            title: `${s.subject} (${s.room || 'No room'}) - ${s.mode}`,
+                            start: startDateTime,
+                            end: new Date(new Date(startDateTime).getTime() + 90 * 60000).toISOString()
+                        });
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading calendar:', error);
+            }
+        }
+
+        async function saveCalendarEvent() {
+            const formData = new FormData();
+            formData.append('action', 'add_schedule');
+            formData.append('subject', document.getElementById('calendarSubject').value);
+            formData.append('room', document.getElementById('calendarRoom').value);
+            formData.append('mode', document.getElementById('calendarMode').value);
+            
+            const startDateTime = new Date(document.getElementById('calendarStart').value);
+            formData.append('schedule_date', startDateTime.toISOString().split('T')[0]);
+            formData.append('schedule_time', startDateTime.toTimeString().slice(0, 5));
+            formData.append('notes', document.getElementById('calendarNotes').value);
+
+            try {
+                const response = await fetch(API_URL + 'api.php', { method: 'POST', body: formData });
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    calendar.addEvent({
+                        id: result.id,
+                        title: `${document.getElementById('calendarSubject').value} (${document.getElementById('calendarRoom').value}) - ${document.getElementById('calendarMode').value}`,
+                        start: document.getElementById('calendarStart').value,
+                        end: document.getElementById('calendarEnd').value
+                    });
+                    closeModal('calendarModal');
+                }
+            } catch (error) {
+                alert('Error saving to calendar');
+            }
+        }
+
+        async function updateCalendarEvent(event) {
+            const formData = new FormData();
+            formData.append('action', 'update_schedule');
+            formData.append('schedule_id', event.id);
+            formData.append('subject', event.title.split(' (')[0]);
+            formData.append('schedule_date', event.start.toISOString().split('T')[0]);
+            formData.append('schedule_time', event.start.toTimeString().slice(0, 5));
+            await fetch(API_URL + 'api.php', { method: 'POST', body: formData });
+        }
+
+        async function deleteCalendarEvent(id) {
+            const formData = new FormData();
+            formData.append('action', 'delete_schedule');
+            formData.append('schedule_id', id);
+            await fetch(API_URL + 'api.php', { method: 'POST', body: formData });
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('show');
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(e) {
+            if (e.target.classList.contains('modal')) {
+                e.target.classList.remove('show');
+            }
+        };
+
+        // Notification interactions
+        document.addEventListener('click', function(e) {
+            const dropdown = document.getElementById('notificationDropdown');
+            const bell = document.querySelector('.notification-bell');
+
+            // Click outside bell/dropdown closes dropdown
+            if (bell && !bell.contains(e.target) && dropdown && !dropdown.contains(e.target)) {
+                dropdown.classList.remove('show');
+            }
+
+            // Click on a notification item navigates to the appropriate page
+            const item = e.target.closest('.notification-item');
+            if (item && dropdown && dropdown.contains(item)) {
+                const message = item.getAttribute('data-message') || '';
+                const notificationId = item.getAttribute('data-id');
+                if (notificationId && item.getAttribute('data-status') === 'unread') {
+                    markNotificationRead(notificationId, item);
+                }
+                handleNotificationClick(message);
+                dropdown.classList.remove('show');
+            }
+        });
+
+        async function markNotificationRead(notificationId, itemElement) {
+            try {
+                const formData = new FormData();
+                formData.append('action', 'mark_notification_read');
+                formData.append('notification_id', notificationId);
+                await fetch(API_URL + 'api.php', { method: 'POST', body: formData });
+                itemElement.setAttribute('data-status', 'read');
+                itemElement.classList.remove('unread');
+                updateNotificationBadge(-1);
+            } catch (error) {
+                console.error('Failed to mark notification as read', error);
+            }
+        }
+
+        function updateNotificationBadge(delta) {
+            const badge = document.getElementById('notificationBadge');
+            let current = parseInt(badge.textContent || '0', 10);
+            current = Math.max(0, current + delta);
+            if (current > 0) {
+                badge.textContent = current;
+                badge.classList.remove('hidden');
+            } else {
+                badge.textContent = '0';
+                badge.classList.add('hidden');
+            }
+        }
+
+        // Session check on load
+        document.addEventListener('DOMContentLoaded', () => {
+            checkSession();
+            window.addEventListener('resize', adjustLayoutForViewport);
+        });
+
+        async function checkSession() {
+            try {
+                const response = await fetch(API_URL + 'auth.php?action=session_check');
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    currentUser = { id: result.user_id, name: result.name };
+                    loadApp();
+                } else {
+                    switchPage('loginPage');
+                    setAppReady();
+                }
+            } catch (error) {
+                switchPage('loginPage');
+                setAppReady();
+            }
+        }
+
+        function setAppReady() {
+            document.body.classList.remove('loading');
+            document.body.classList.add('loaded');
+        }
+
+        function adjustLayoutForViewport() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('mainContent');
+            if (!sidebar || !mainContent) return;
+
+            if (window.innerWidth <= 768) {
+                sidebar.classList.add('closed');
+                mainContent.classList.add('full-width');
+            } else {
+                sidebar.classList.remove('closed');
+                mainContent.classList.remove('full-width');
+            }
+            updateSidebarBackdrop();
+        }
+
+        function updateSidebarBackdrop() {
+            const sidebar = document.getElementById('sidebar');
+            const backdrop = document.getElementById('sidebarBackdrop');
+            if (!sidebar || !backdrop) return;
+
+            if (window.innerWidth <= 768 && !sidebar.classList.contains('closed')) {
+                backdrop.classList.add('show');
+                document.body.style.overflow = 'hidden';
+            } else {
+                backdrop.classList.remove('show');
+                document.body.style.overflow = '';
+            }
+        }
+    </script>
+</body>
+</html>

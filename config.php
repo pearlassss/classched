@@ -3,7 +3,7 @@
 define('DB_HOST', 'localhost');
 define('DB_USER', 'root');
 define('DB_PASSWORD', '');
-define('DB_NAME', 'class_schedule_db');
+define('DB_NAME', 'classs schedule db');
 
 // Create connection
 $conn = new mysqli(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME);
@@ -129,4 +129,5 @@ function isCodeExpired($expiration) {
     if (!$expiration) return true;
     return strtotime($expiration) < time();
 }
+
 ?>
